@@ -34,6 +34,10 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest extends LoginRequest {
+  full_name: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token: string; // returned by the API but intentionally unused: no refresh endpoint exists

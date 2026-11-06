@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { LogOut, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { NAV_ITEMS } from './nav';
+import { ADMIN_NAV_ITEMS, USER_NAV_ITEMS } from './nav';
 
 export function Brand({ showText = true }: { showText?: boolean }) {
+  const { user } = useAuth();
   return (
     <div className="flex items-center gap-2.5">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
@@ -12,7 +13,9 @@ export function Brand({ showText = true }: { showText?: boolean }) {
       {showText && (
         <span className="leading-tight">
           <span className="block text-base font-semibold">CrediSure</span>
-          <span className="block text-xs text-ink-500">Administration Dashboard</span>
+          <span className="block text-xs text-ink-500">
+            {user?.role === 'admin' ? 'Administration Dashboard' : 'Account Portal'}
+          </span>
         </span>
       )}
     </div>
@@ -26,11 +29,13 @@ interface NavProps {
 }
 
 export function NavList({ labels, onNavigate }: NavProps) {
+  const { user } = useAuth();
   const textClass = labels === 'always' ? '' : 'hidden lg:inline';
+  const navItems = user?.role === 'admin' ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
   return (
     <nav aria-label="Main">
       <ul className="space-y-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <li key={to}>
             <NavLink
               to={to}

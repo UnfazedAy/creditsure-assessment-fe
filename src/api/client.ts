@@ -97,6 +97,7 @@ const FALLBACK_MESSAGES: Record<number, string> = {
   400: 'The request could not be completed.',
   401: 'Your session has expired. Please sign in again.',
   403: "You don't have permission to do that. An administrator account is required.",
+  409: 'An account with this email already exists.',
   404: 'The requested record could not be found.',
   422: 'Some of the information provided is invalid.',
 };

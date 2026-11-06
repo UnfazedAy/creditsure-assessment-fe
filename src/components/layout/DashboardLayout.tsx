@@ -7,7 +7,7 @@ import MobileNav from './MobileNav';
 import Sidebar, { Brand } from './Sidebar';
 
 export default function DashboardLayout() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -25,8 +25,9 @@ export default function DashboardLayout() {
   }, []);
 
   const handleLogout = () => {
+    const loginPath = user?.role === 'admin' ? '/admin/login' : '/login';
     logout();
-    navigate('/login', { replace: true });
+    navigate(loginPath, { replace: true });
   };
 
   return (

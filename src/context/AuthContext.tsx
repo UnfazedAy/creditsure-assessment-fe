@@ -1,22 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getCurrentUser, login as apiLogin } from '../api/auth';
 import { ApiError, setUnauthorizedHandler, tokenStore } from '../api/client';
-import type { User } from '../types/api';
+import type { User, UserRole } from '../types/api';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 interface AuthContextValue {
   user: User | null;
   status: AuthStatus;
-  /** One-off message to show on the login page (expired session, admin-only, etc.). */
+  /** One-off message to show on the login page, such as an expired-session notice. */
   notice: string | null;
   clearNotice: () => void;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, requiredRole?: UserRole) => Promise<User>;
   logout: () => void;
 }
 
 const ADMIN_ONLY_MESSAGE =
-  'The administration dashboard requires administrator privileges. Your account does not have admin access.';
+  'This account does not have administrator access. Please use the user login page.';
 const EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,12 +43,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getCurrentUser()
       .then((me) => {
         if (!active) return;
-        if (me.role !== 'admin') {
-          tokenStore.clear();
-          setNotice(ADMIN_ONLY_MESSAGE);
-          setStatus('unauthenticated');
-          return;
-        }
         setUser(me);
         setStatus('authenticated');
       })
@@ -65,20 +59,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, requiredRole?: UserRole) => {
     setNotice(null);
     try {
       const tokens = await apiLogin({ email, password });
       tokenStore.set(tokens.access_token); // refresh_token is deliberately discarded
       const me = await getCurrentUser();
-      if (me.role !== 'admin') {
-        throw new ApiError({ message: ADMIN_ONLY_MESSAGE, status: 403 });
+      if (requiredRole && me.role !== requiredRole) {
+        throw new ApiError({
+          message: requiredRole === 'admin' ? ADMIN_ONLY_MESSAGE : 'This account does not have user access.',
+          status: 403,
+        });
       }
       setUser(me);
       setStatus('authenticated');
+      return me;
     } catch (error) {
       tokenStore.clear();
-      setNotice(null);
+      setUser(null);
+      setStatus('unauthenticated');
       throw error;
     }
   }, []);
